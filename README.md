@@ -7,7 +7,7 @@
 - - Safebooru
 
 
-## Installation (For Development)
+## Installation
 1. Clone this repository:
    ```bash
    git clone https://github.com/Ritpop/booru-tag-copier-extension/
