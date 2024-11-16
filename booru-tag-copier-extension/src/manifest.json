@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "Tag Copier (Educational)",
+    "version": "1.0",
+    "description": "Educational extension for copying tags from various image boards - for testing only",
+    "permissions": ["clipboardWrite"],
+    "content_scripts": [{
+        "matches": [
+            "https://gelbooru.com/index.php?page=post&s=view&id=*",
+            "https://danbooru.donmai.us/posts/*",
+            "https://safebooru.org/index.php?page=post&s=view&id=*"
+        ],
+        "js": ["content.js"],
+        "run_at": "document_end"
+    }]
+}
