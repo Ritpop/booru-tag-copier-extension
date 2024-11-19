@@ -1,14 +1,21 @@
 {
     "manifest_version": 3,
-    "name": "Tag Copier (Educational)",
-    "version": "1.0",
-    "description": "Educational extension for copying tags from various image boards - for testing only",
+    "name": "Tag Copier",
+    "version": "1.1",
+    "description": "Educational? extension for copying tags from various image boards",
     "permissions": ["clipboardWrite"],
     "content_scripts": [{
         "matches": [
             "https://gelbooru.com/index.php?page=post&s=view&id=*",
             "https://danbooru.donmai.us/posts/*",
-            "https://safebooru.org/index.php?page=post&s=view&id=*"
+            "https://safebooru.org/index.php?page=post&s=view&id=*",
+            "https://*.rule34.xxx/index.php?page=post*",
+            "https://e621.net/posts/*",
+            "https://konachan.com/post/*",
+            "https://konachan.net/post/*",
+            "https://rule34.paheal.net/post/*",
+            "https://yande.re/post/*",
+            "https://tbib.org/index.php?page=post*"
         ],
         "js": ["content.js"],
         "run_at": "document_end"
