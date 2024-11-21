@@ -1,5 +1,18 @@
 (function() {
-    // Preset for different sites
+    // clean and format the tags
+    function cleanTag(tag) {
+        return tag.replace(/[\?]/g, '').replace(/_/g, ' ').trim().toLowerCase();
+    }
+
+
+    function loadPresets(callback) {
+        chrome.storage.local.get('presets', (data) => {
+            const presets = data.presets || [];
+            callback(presets);
+        });
+    }
+
+    // Get the configuration for the current site based on hostname, these are html tags of the sites
     const siteConfigs = {
         'gelbooru.com': {
             selectors: {
@@ -73,6 +86,22 @@
                 general: '#tag-sidebar li a'
             }
         },
+        'chan.sankakucomplex.com': {
+            selectors: {
+                artists: '#tag-sidebar .tag-type-artist a.tag-link',
+                copyrights: '#tag-sidebar .tag-type-copyright a.tag-link',
+                characters: '#tag-sidebar .tag-type-character a.tag-link',
+                fashion: '#tag-sidebar .tag-type-fashion a.tag-link',
+                anatomy: '#tag-sidebar .tag-type-anatomy a.tag-link',
+                pose: '#tag-sidebar .tag-type-pose a.tag-link',
+                activity: '#tag-sidebar .tag-type-activity a.tag-link',
+                object: '#tag-sidebar .tag-type-object a.tag-link',
+                substance: '#tag-sidebar .tag-type-substance a.tag-link',
+                setting: '#tag-sidebar .tag-type-setting a.tag-link',
+                medium: '#tag-sidebar .tag-type-medium a.tag-link',
+                automatic: '#tag-sidebar .tag-type-automatic a.tag-link'
+            }
+        },
         'rule34.paheal.net': {
             selectors: {
                 general: 'table.tag_list td.tag_name_cell a'
@@ -85,52 +114,25 @@
         return siteConfigs[Object.keys(siteConfigs).find(key => hostname.includes(key))];
     }
 
-    function cleanTag(tag) {
-
-        return tag.replace(/[\?]/g, '').replace(/_/g, ' ').trim().toLowerCase();
-    }
-
     function getAllTags(config) {
         const allTags = [];
 
-        if (config.selectors.artists) {
-            document.querySelectorAll(config.selectors.artists).forEach(el => {
-                allTags.push('creator:' + cleanTag(el.textContent));
-            });
-        }
+        // Loop through each tag category in the config
+        Object.keys(config.selectors).forEach(category => {
+            if (config.selectors[category]) {
+                document.querySelectorAll(config.selectors[category]).forEach(el => {
+                    const cleanTagText = cleanTag(el.textContent);
+                    if (cleanTagText) {
+                        allTags.push(cleanTagText); // Add tag without category prefix
+                    }
+                });
+            }
+        });
 
-        if (config.selectors.characters) {
-            document.querySelectorAll(config.selectors.characters).forEach(el => {
-                allTags.push('character:' + cleanTag(el.textContent));
-            });
-        }
-
-        if (config.selectors.copyrights) {
-            document.querySelectorAll(config.selectors.copyrights).forEach(el => {
-                allTags.push('series:' + cleanTag(el.textContent));
-            });
-        }
-
-        if (config.selectors.general) {
-            document.querySelectorAll(config.selectors.general).forEach(el => {
-                allTags.push(cleanTag(el.textContent));
-            });
-        }
-
-        if (config.selectors.species) {
-            document.querySelectorAll(config.selectors.species).forEach(el => {
-                allTags.push('species:' + cleanTag(el.textContent));
-            });
-        }
-
-        if (config.selectors.meta) {
-            document.querySelectorAll(config.selectors.meta).forEach(el => {
-                allTags.push('meta:' + cleanTag(el.textContent));
-            });
-        }
-
-        return allTags.filter(tag => tag && tag.length > 0);
+        return allTags.filter(tag => tag && tag.length > 0); // remove empty or invalid tags
     }
+
+
 
     function createCopyButton() {
         const button = document.createElement('button');
@@ -139,42 +141,72 @@
             bottom: '20px',
             right: '20px',
             zIndex: '10000',
-            padding: '10px 15px',
-            backgroundColor: '#007bff',
-            color: '#fff',
+            padding: '12px 20px',
             border: 'none',
-            borderRadius: '5px',
+            borderRadius: '8px',
             cursor: 'pointer',
             fontFamily: 'Arial, sans-serif',
-            fontSize: '14px',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-            transition: 'background-color 0.2s ease'
+            fontSize: '16px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            transition: 'background-color 0.3s ease, transform 0.2s ease',
+            color: 'white',
         });
 
         button.textContent = 'Copy Tags';
 
-        button.onmouseover = () => button.style.backgroundColor = '#0056b3';
-        button.onmouseout = () => button.style.backgroundColor = '#007bff';
+        // Set the button color based on the current site
+        const siteConfig = getCurrentSiteConfig();
+        if (siteConfig) {
+            button.style.backgroundColor = getSiteColor(window.location.hostname);
+        }
 
+        button.onmouseover = () => {
+            button.style.backgroundColor = darkenColor(button.style.backgroundColor, 0.2);
+            button.style.transform = 'scale(1.05)';
+        };
+        button.onmouseout = () => {
+            button.style.backgroundColor = getSiteColor(window.location.hostname);
+            button.style.transform = 'scale(1)';
+        };
+
+        // Click event to copy tags to clipboard
         button.onclick = () => {
             const config = getCurrentSiteConfig();
             if (config) {
                 const tags = getAllTags(config);
-                const tagString = tags.join(', ');
-                navigator.clipboard.writeText(tagString)
-                    .then(() => {
-                        button.textContent = `Copied ${tags.length} tags!`;
-                        setTimeout(() => {
-                            button.textContent = 'Copy Tags';
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy tags:', err);
-                        button.textContent = 'Failed to copy';
-                        setTimeout(() => {
-                            button.textContent = 'Copy Tags';
-                        }, 2000);
-                    });
+                loadPresets((presets) => {
+
+                    const selectedPresets = presets.filter(preset => preset.selected);
+
+                    const beginningPresets = selectedPresets
+                        .filter(preset => preset.position === 'beginning')
+                        .flatMap(preset => preset.tags);
+
+                    const endPresets = selectedPresets
+                        .filter(preset => preset.position === 'end')
+                        .flatMap(preset => preset.tags);
+
+                    const tagString = [
+                        ...beginningPresets,
+                        ...tags,
+                        ...endPresets
+                    ].join(', ');
+
+                    navigator.clipboard.writeText(tagString)
+                        .then(() => {
+                            button.textContent = `Copied ${beginningPresets.length + tags.length + endPresets.length} tags!`;
+                            setTimeout(() => {
+                                button.textContent = 'Copy Tags';
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy tags:', err);
+                            button.textContent = 'Failed to copy';
+                            setTimeout(() => {
+                                button.textContent = 'Copy Tags';
+                            }, 2000);
+                        });
+                });
             } else {
                 button.textContent = 'Site not supported';
                 setTimeout(() => {
@@ -186,11 +218,39 @@
         return button;
     }
 
+    function getSiteColor(hostname) {
+        const colors = {
+            'rule34.xxx': '#009', // Rule34 Dark blue
+            'e621.net': '#1e88e5', // e621 Blue
+            'konachan.com': '#ee8887', // Konachan Pink
+            'konachan.net': '#ee8887', // Konachan Pink
+            'yande.re': '#ee8887', // Yande.re Pink
+            'rule34.paheal.net': '#009', // Paheal Dark blue
+            'chan.sankakucomplex.com': '#FF761C', // Sankaku Complex Orange
+        };
+
+        return colors[hostname] || '#006ffa'; // Default to blue if no specific color is found
+    }
+
+    function darkenColor(color, amount) {
+        let colorHex = color.replace('#', '');
+        let r = parseInt(colorHex.substring(0, 2), 16);
+        let g = parseInt(colorHex.substring(2, 4), 16);
+        let b = parseInt(colorHex.substring(4, 6), 16);
+
+        r = Math.max(0, r - (r * amount));
+        g = Math.max(0, g - (g * amount));
+        b = Math.max(0, b - (b * amount));
+
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+
+
     function init() {
         const button = createCopyButton();
         document.body.appendChild(button);
 
-        //Shortkey "]"
+        // Shortkey "]"
         document.addEventListener('keyup', (e) => {
             if (e.key === ']') {
                 button.click();
