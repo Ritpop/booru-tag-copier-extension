@@ -20,7 +20,7 @@ This is for copying the tags from multiple booru sites, it  adds a button in the
 2. Open any post with tags.
 3. Click the Copy Tags button added by the extension or press the ] key.
 4. Paste the copied tags wherever you need them.
-# Menu
+### Menu
 5. Add prompt preset and choose beggining or end.
 6. Manage presets by dragging then.
 
