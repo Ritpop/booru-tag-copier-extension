@@ -12,12 +12,19 @@ This is for copying the tags from multiple booru sites, it  adds a button in the
 - - Rule34.paheal
 - - Yande.re
 - - TBIB
+- - Sankaku Complex
+
 
 ## How to Use
 1. Navigate to a supported Booru website.
 2. Open any post with tags.
 3. Click the Copy Tags button added by the extension or press the ] key.
 4. Paste the copied tags wherever you need them.
+# Menu
+5. Add prompt preset and choose beggining or end.
+6. Manage presets by dragging then.
+
+   
 ## Installation
 1. Clone this repository:
    ```bash
