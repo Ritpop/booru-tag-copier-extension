@@ -24,7 +24,7 @@
             "https://rule34.paheal.net/post/*",
             "https://yande.re/post/*",
             "https://tbib.org/index.php?page=post*",
-            "https://chan.sankakucomplex.com/pt/posts/*"
+            "https://chan.sankakucomplex.com/*"
         ],
         "js": ["content.js"],
         "run_at": "document_end"
