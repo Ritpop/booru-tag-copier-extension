@@ -1,0 +1,53 @@
+{
+    "manifest_version": 3,
+    "name": "Tag Copier",
+    "version": "1.5",
+    "description": "Educational(?) extension for copying tags from various image boards",
+    "permissions": [
+        "clipboardWrite",
+        "storage",
+        "tabs",
+        "activeTab"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+
+
+    "content_scripts": [{
+        "matches": [
+            "https://*.booru.org/*",
+            "https://*.booru.net/*",
+            "https://*.booru.com/*",
+            "https://*.booru.allthefallen.moe/*",
+            "https://gelbooru.com/index.php?page=post&s=view&id=*",
+            "https://danbooru.donmai.us/posts/*",
+            "https://safebooru.org/index.php?page=post&s=view&id=*",
+            "https://*.rule34.xxx/index.php?page=post*",
+            "https://e621.net/posts/*",
+            "https://konachan.com/post/*",
+            "https://konachan.net/post/*",
+            "https://rule34.paheal.net/post/*",
+            "https://yande.re/post/*",
+            "https://tbib.org/index.php?page=post*",
+            "https://chan.sankakucomplex.com/pt/posts/*"
+        ],
+        "js": ["config.js", "colorUtils.js", "content.js"],
+        "run_at": "document_end"
+    }],
+    "icons": {
+        "16": "icons/icon16.ico",
+        "48": "icons/icon48.ico",
+        "128": "icons/icon128.ico"
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    }
+
+}
