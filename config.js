@@ -160,4 +160,24 @@ var TagCopierConfig = (function() {
     };
 })();
 
+function getImageUrl() {
+    const hostname = window.location.hostname;
+    const imageSelectors = {
+        'rule34.xxx': '#image',
+        'e621.net': '#image',
+        'konachan.com': '#image',
+        'konachan.net': '#image',
+        'yande.re': '#image',
+        'rule34.paheal.net': '#main_image',
+        'gelbooru.com': '#image',
+        'danbooru.donmai.us': '#image',
+        'safebooru.org': '#image',
+        'chan.sankakucomplex.com': '#post-content img',
+        'tbib.org': '#image'
+    };
+
+    const selector = imageSelectors[hostname] || '#image';
+    const imageElement = document.querySelector(selector);
+    return imageElement ? imageElement.src : null;
+}
 //I am not really sure if making a gigantic function to return the selectors are a good idea, but i hadnt much trouble with it so...

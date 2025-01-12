@@ -1,16 +1,19 @@
 {
     "manifest_version": 3,
     "name": "Tag Copier",
-    "version": "1.5",
+    "version": "1.6",
     "description": "Educational(?) extension for copying tags from various image boards",
     "permissions": [
         "clipboardWrite",
         "storage",
         "tabs",
-        "activeTab"
+        "activeTab",
+        "downloads",
+        "offscreen"
     ],
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     },
 
 
