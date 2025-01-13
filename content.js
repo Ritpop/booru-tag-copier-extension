@@ -10,6 +10,13 @@
             callback(presets);
         });
     }
+    // Load settings from storage
+    function loadSettings(callback) {
+        chrome.storage.local.get({
+            enableDownloadButton: true,
+            enableDownloadTags: true
+        }, callback);
+    }
 
     function getCurrentSiteConfig() {
         const hostname = window.location.hostname;
@@ -64,7 +71,13 @@
             console.error('Could not find image URL');
             return false;
         }
-
+        let enableDownloadTags;
+        await new Promise(resolve => {
+            loadSettings(items => {
+                enableDownloadTags = items.enableDownloadTags;
+                resolve();
+            });
+        });
         try {
             // Extract base filename from URL
             const urlParts = imageUrl.split('/');
@@ -79,50 +92,58 @@
             // Get tags
             const config = getCurrentSiteConfig();
             const tags = getAllTags(config);
+            let tagContent = "";
+            if (enableDownloadTags) {
+                await new Promise((resolve) => {
+                    loadPresets((presets) => {
+                        const selectedPresets = presets.filter(preset => preset.selected);
+                        const beginningPresets = selectedPresets
+                            .filter(preset => preset.position === 'beginning')
+                            .flatMap(preset => preset.tags);
+                        const endPresets = selectedPresets
+                            .filter(preset => preset.position === 'end')
+                            .flatMap(preset => preset.tags);
 
-            return new Promise((resolve) => {
-                loadPresets((presets) => {
-                    const selectedPresets = presets.filter(preset => preset.selected);
-                    const beginningPresets = selectedPresets
-                        .filter(preset => preset.position === 'beginning')
-                        .flatMap(preset => preset.tags);
-                    const endPresets = selectedPresets
-                        .filter(preset => preset.position === 'end')
-                        .flatMap(preset => preset.tags);
-
-                    const allTags = [...beginningPresets, ...tags, ...endPresets];
-                    const tagContent = allTags.join(', ');
-                    const tagsFilename = `${baseFilename}.txt`;
-
-                    // Create a temporary link for downloading the tags
-                    const downloadLink = document.createElement('a');
-                    const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(tagContent);
-                    downloadLink.href = dataUri;
-                    downloadLink.download = tagsFilename; // Set the desired filename
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-
-                    // Send message to background script to download the image
-                    chrome.runtime.sendMessage({
-                        action: "downloadImage", // Changed action name
-                        imageUrl: imageUrl,
-                        filename: `${baseFilename}.${extension}`
-                    }, response => {
-                        if (chrome.runtime.lastError) {
-                            console.error('Image download error:', chrome.runtime.lastError);
-                            resolve(false);
-                            return;
-                        }
-
-                        if (response && response.status === "downloading") {
-                            console.log('Image download started successfully');
-                            resolve(true);
-                        } else {
-                            console.error('Unexpected response:', response);
-                            resolve(false);
-                        }
+                        const allTags = [...beginningPresets, ...tags, ...endPresets];
+                        tagContent = allTags.join(', ');
+                        resolve();
                     });
+                });
+            }
+            const tagsFilename = `${baseFilename}.txt`;
+
+
+            if (enableDownloadTags) {
+                // Create a temporary link for downloading the tags
+                const downloadLink = document.createElement('a');
+                const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(tagContent);
+                downloadLink.href = dataUri;
+                downloadLink.download = tagsFilename; // Set the desired filename
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }
+
+            // Send message to background script to download the image
+            return new Promise((resolve) => {
+                chrome.runtime.sendMessage({
+                    action: "downloadImage", // Changed action name
+                    imageUrl: imageUrl,
+                    filename: `${baseFilename}.${extension}`
+                }, response => {
+                    if (chrome.runtime.lastError) {
+                        console.error('Image download error:', chrome.runtime.lastError);
+                        resolve(false);
+                        return;
+                    }
+
+                    if (response && response.status === "downloading") {
+                        console.log('Image download started successfully');
+                        resolve(true);
+                    } else {
+                        console.error('Unexpected response:', response);
+                        resolve(false);
+                    }
                 });
             });
         } catch (error) {
@@ -230,13 +251,35 @@
 
         // Download functionality
         downloadButton.onclick = async() => {
-            downloadButton.textContent = 'Downloading...';
-            await downloadImageAndTags();
-            downloadButton.textContent = 'Downloaded!';
-            setTimeout(() => {
-                downloadButton.textContent = 'Download';
-            }, 2000);
+            let enableDownloadButton;
+            await new Promise(resolve => {
+                loadSettings(items => {
+                    enableDownloadButton = items.enableDownloadButton;
+                    resolve();
+                });
+            });
+            if (enableDownloadButton) {
+                downloadButton.textContent = 'Downloading...';
+                await downloadImageAndTags();
+                downloadButton.textContent = 'Downloaded!';
+                setTimeout(() => {
+                    downloadButton.textContent = 'Download';
+                }, 2000);
+            } else {
+                downloadButton.textContent = 'Disabled';
+                setTimeout(() => {
+                    downloadButton.textContent = 'Download';
+                }, 2000);
+
+            }
         };
+
+        let enableDownloadButton;
+        loadSettings(items => {
+            enableDownloadButton = items.enableDownloadButton;
+            if (!enableDownloadButton)
+                downloadButton.style.display = 'none';
+        });
 
         buttonContainer.appendChild(downloadButton);
         buttonContainer.appendChild(copyButton);
@@ -256,6 +299,28 @@
             }
         });
     }
+    // listener to message from the popup
+    chrome.runtime.onMessage.addListener(
+        function(request, sender, sendResponse) {
+            if (request.action === "updateSettings") {
+                loadSettings(items => {
+                    if (!items.enableDownloadButton) {
+                        const downloadButton = document.querySelector('button:contains("Download")');
+                        if (downloadButton) {
+                            downloadButton.style.display = 'none';
+                        }
+
+                    } else {
+                        const downloadButton = document.querySelector('button:contains("Download")');
+                        if (downloadButton) {
+                            downloadButton.style.display = '';
+                        }
+                    }
+                });
+            }
+        }
+    );
+
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

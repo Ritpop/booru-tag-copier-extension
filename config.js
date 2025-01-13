@@ -15,6 +15,13 @@ var TagCopierConfig = (function() {
             general: '#tag_list li.tag-type-0 a.search-tag',
             meta: '#tag_list li.tag-type-5 a.search-tag'
         },
+        'danbooruTags': {
+            artists: '#tag-list li.tag-type-artist a',
+            characters: '#tag-list li.tag-type-character a',
+            copyrights: '#tag-list li.tag-type-copyright a',
+            general: '#tag-list li.tag-type-general a',
+            meta: '#tag-list li.tag-type-metadata a'
+        },
         'sidebarTags': {
             artists: '#tag-sidebar .tag-type-artist a',
             characters: '#tag-sidebar .tag-type-character a',
@@ -84,7 +91,7 @@ var TagCopierConfig = (function() {
     // Select the preset for each site, if needded add a new preset.
     const siteConfigs = {
         'gelbooru.com': createSiteConfig(selectorPresets.booruTagLi),
-        'danbooru.donmai.us': createSiteConfig(selectorPresets.booruTagListLi),
+        'danbooru.donmai.us': createSiteConfig(selectorPresets.booruTagLi),
         'safebooru.org': createSiteConfigWithOverrides(selectorPresets.sidebarTags, { artists: null }),
         'rule34.xxx': createSiteConfig(selectorPresets.listTags),
         'e621.net': createSiteConfigWithOverrides(selectorPresets.generalList, {
