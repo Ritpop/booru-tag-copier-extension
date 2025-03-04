@@ -1,3 +1,4 @@
+// --- content.js ---
 (function() {
     // clean and format the tags
     function cleanTag(tag) {
@@ -23,47 +24,60 @@
         return TagCopierConfig.siteConfigs[Object.keys(TagCopierConfig.siteConfigs).find(key => hostname.includes(key))];
     }
 
-    function extractTagsFromSelectors(selectors) {
-        const allTags = [];
-        selectors.forEach(selector => {
-            document.querySelectorAll(selector).forEach(el => {
-                const cleanTagText = cleanTag(el.textContent);
-                if (cleanTagText) {
-                    allTags.push(cleanTagText);
-                }
-            });
+
+    function extractTagsFromSelector(selector) {
+        const tags = new Set(); // Use a Set to avoid duplicates within a single selector
+        if (!selector) return tags; // Handle null or undefined selectors
+
+        document.querySelectorAll(selector).forEach(el => {
+            const cleanTagText = cleanTag(el.textContent);
+            if (cleanTagText) {
+                tags.add(cleanTagText);
+            }
         });
-        return allTags.filter(tag => tag && tag.length > 0);
+        return tags;
     }
+
 
     function getAllTags(config) {
+        const allTags = new Set();
+
         if (config && config.selectors) {
-            let allTags = [];
+            // Use site-specific selectors first
             for (const category in config.selectors) {
                 const selector = config.selectors[category];
-                if (selector) {
-                    allTags = allTags.concat(extractTagsFromSelectors([selector])); // Pass selector as an array
+                const tags = extractTagsFromSelector(selector);
+                tags.forEach(tag => allTags.add(tag)); // Add to the overall set
+            }
+        }
+
+        // Fallback ONLY if no tags were found using site-specific selectors
+        if (allTags.size === 0) {
+            const genericSelectors = TagCopierConfig.genericBooruSelectors;
+            for (const category in genericSelectors) {
+                if (category !== 'fallback') {
+                    for (const selector of genericSelectors[category]) { // Iterate through the array of selectors
+                        const tags = extractTagsFromSelector(selector);
+                        tags.forEach(tag => allTags.add(tag)); // Add to the overall set
+                        if (tags.size > 0) break; // Stop on the first successful selector
+                    }
                 }
             }
-            return allTags;
-        }
-        return getTagsFromFallback();
-    }
-    // Fallback to generic selectors if no config is found,
-
-    function getTagsFromFallback() {
-        const allTags = [];
-        const selectors = TagCopierConfig.genericBooruSelectors;
-        for (const category in selectors) {
-            if (category !== 'fallback') {
-                allTags.push(...extractTagsFromSelectors(selectors[category])); // Use spread syntax
+            // If still no tags, use fallback
+            if (allTags.size === 0) {
+                for (const selector of genericSelectors.fallback) {
+                    const tags = extractTagsFromSelector(selector);
+                    tags.forEach(tag => allTags.add(tag));
+                    if (tags.size > 0) break;
+                }
             }
         }
-        if (allTags.length === 0) {
-            allTags.push(...extractTagsFromSelectors(selectors.fallback));
-        }
-        return allTags;
+
+        return Array.from(allTags); // Convert Set back to an array
     }
+
+
+
 
     async function downloadImageAndTags() {
         const imageUrl = getImageUrl();
