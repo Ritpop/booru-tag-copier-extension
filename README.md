@@ -2,6 +2,7 @@
 
 This is for copying the tags from multiple booru sites, it  adds a button in the right conner in the supported sites. Its usefull for copying the tags as prompts for stable difussion models.
 It also can be used for downloading images along side the tags in a txt file for creating dataset for tranning models.
+Be careful if copying any of the links, many of these sites are heavily NSFW 
 
 ## Features
 
